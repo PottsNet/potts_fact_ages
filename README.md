@@ -45,21 +45,6 @@ The final folder path should be:
 modules_v4/potts_fact_ages/module.php
 ```
 
-## Upgrading from the early `fact_ages` beta
-
-Early development betas used the folder name `fact_ages` and the user-facing title **Fact Ages**.
-
-For the public GitHub release, the module has been renamed to **Potts Fact Ages** and the folder has been renamed to `potts_fact_ages`.
-
-Recommended upgrade process:
-
-1. Disable the old **Fact Ages** module in webtrees.
-2. Remove or rename the old `modules_v4/fact_ages` folder.
-3. Upload the new `modules_v4/potts_fact_ages` folder.
-4. Enable **Potts Fact Ages**.
-5. Re-check the module settings.
-6. Clear the webtrees cache.
-
 ## Settings
 
 The module configuration page lets administrators choose where ages are shown:
