@@ -102,17 +102,6 @@ The status output includes the module version and diagnostic details such as can
 - Custom tag filtering is based on GEDCOM tags, not translated fact labels.
 - This is a public beta release. Test on a staging copy of your webtrees site before using it on a production site.
 
-## GitHub release checklist
-
-For each public release:
-
-1. Update the version number in `module.php`.
-2. Update `CHANGELOG.md`.
-3. Update `RELEASE_NOTES.md`.
-4. Create an installable zip containing the `potts_fact_ages` folder.
-5. Attach the installable zip to the GitHub release.
-6. Do not upload GitHub’s automatically generated `Source code.zip` as the installable webtrees module.
-
 ## Licence
 
 GPL-3.0-or-later.
