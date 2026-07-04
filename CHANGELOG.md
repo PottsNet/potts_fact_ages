@@ -2,12 +2,27 @@
 
 All notable changes to Potts Fact Ages will be documented in this file.
 
+## 1.0.0
+
+### Changed
+
+- Promoted the tested `1.0.0-beta.7` build to a regular stable release.
+- Updated internal version from `1.0.0-beta.7` to `1.0.0`.
+- Updated README and release notes from beta wording to stable release wording.
+
+### Added
+
+- Added `latest-version.txt`.
+- Added update service support for webtrees and Custom Module Manager.
+- Added `customModuleLatestVersionUrl()` so the module should not show `Update service: None`.
+
 ## 1.0.0-beta.7
 
 ### Fixed
 
-- Fixed the **Tabs settings** link so it points to the webtrees `/admin/tabs` route relative to the current webtrees installation.
-- Prevented the settings-page Tabs settings button from falling back to the user's My Page/dashboard route.
+- Fixed title-tile age labels when a fact note contains a more specific date than the actual event date.
+- Improved the browser-side date matcher so notes, sources and media captions are ignored when detecting the event date for an existing fact tile.
+- Prevents cases such as a birth note mentioning a later marriage date from making later events calculate from the wrong starting date.
 
 ## 1.0.0-beta.6
 

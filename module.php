@@ -38,7 +38,8 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     use ModuleGlobalTrait;
     use ModuleConfigTrait;
 
-    private const VERSION = '1.0.0-beta.7';
+    private const VERSION = '1.0.0';
+    private const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/PottsNet/potts_fact_ages/main/latest-version.txt';
 
     private const PREF_SHOW_PERSONAL = 'show_personal_facts';
     private const PREF_SHOW_FAMILY = 'show_family_facts';
@@ -126,6 +127,33 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     public function customModuleVersion(): string
     {
         return self::VERSION;
+    }
+
+    public function customModuleLatestVersion(): string
+    {
+        return Registry::cache()->file()->remember(
+            $this->name() . '-latest-version',
+            function (): string {
+                $latest = trim((string) @file_get_contents(self::LATEST_VERSION_URL));
+
+                if (preg_match('/^v?(\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.\-]+)?)$/', $latest, $match) === 1) {
+                    return $match[1];
+                }
+
+                return $this->customModuleVersion();
+            },
+            86400
+        );
+    }
+
+    public function customModuleLatestVersionUrl(): string
+    {
+        return self::LATEST_VERSION_URL;
+    }
+
+    public function customModuleSupportUrl(): string
+    {
+        return 'https://github.com/PottsNet/potts_fact_ages';
     }
 
     public function defaultTabOrder(): int
@@ -308,7 +336,7 @@ JS;
         return <<<'JS'
 (function(){
     const config = window.pottsFactAgesConfig || {};
-    const version = config.version || '1.0.0-beta.7';
+    const version = config.version || '1.0.0';
     const serverRows = Array.isArray(window.pottsFactAges) ? window.pottsFactAges.slice() : [];
     const rows = serverRows.slice().sort((a, b) => (a.sortKey || 0) - (b.sortKey || 0));
     const serverError = window.pottsFactAgesServerError || null;
@@ -359,6 +387,55 @@ JS;
 
     const rawText = (element) => element ? (element.innerText || element.textContent || '') : '';
     const textOf = (element) => compact(rawText(element));
+
+    const textForDateMatching = (element) => {
+        if (!element || !element.cloneNode) {
+            return rawText(element);
+        }
+
+        const clone = element.cloneNode(true);
+
+        clone.querySelectorAll([
+            'script',
+            'style',
+            'noscript',
+            '.potts-fact-age-inline',
+            '.potts-fact-age-badge',
+            '.wt-fact-age',
+            '.wt-fact-notes',
+            '.wt-fact-note',
+            '.wt-note',
+            '.note',
+            '.notes',
+            '.wt-fact-sources',
+            '.wt-source',
+            '.source',
+            '.sources',
+            '.wt-fact-media',
+            '.wt-media',
+            '.media',
+            '.album',
+            'figure',
+            'img',
+            '.collapse',
+            '.accordion-collapse',
+            '[class*="note" i]',
+            '[class*="source" i]',
+            '[class*="citation" i]',
+            '[class*="media" i]',
+            '[class*="album" i]'
+        ].join(',')).forEach((child) => child.remove());
+
+        Array.from(clone.querySelectorAll('*')).forEach((child) => {
+            const text = normalise(child.textContent || '');
+
+            if (/^(note|notes|source|sources|citation|citations|media|album)/.test(text)) {
+                child.remove();
+            }
+        });
+
+        return rawText(clone);
+    };
 
     const visible = (element) => {
         if (!element || !element.getClientRects) {
@@ -518,7 +595,7 @@ JS;
             }
 
             for (const scope of scopes) {
-                const parsed = parseDateText(rawText(scope));
+                const parsed = parseDateText(textForDateMatching(scope));
 
                 if (parsed) {
                     return parsed;
@@ -1484,7 +1561,7 @@ JS;
 
     private function tabsSettingsUrl(ServerRequestInterface $request): string
     {
-        return $this->siteUrl($request, 'admin/tabs');
+        return $this->siteUrl($request, 'index.php?route=%2Fadmin%2Fmodules%2Ftabs');
     }
 
     private function homePageUrl(ServerRequestInterface $request): string

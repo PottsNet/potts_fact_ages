@@ -4,7 +4,7 @@ Potts Fact Ages is a standalone custom module for **webtrees 2.2.x**.
 
 It displays a person’s calculated age at dated facts and events. It can show ages in a separate tab, place ages directly on the existing Facts and events tiles, or do both.
 
-This module began as part of Jason Potts’ family-history website and has been prepared for public release as part of the Potts webtrees module family.
+This module began as part of Jason Potts’ family-history website and is now published as part of the Potts webtrees module family.
 
 ## Features
 
@@ -31,19 +31,34 @@ This module began as part of Jason Potts’ family-history website and has been 
 
 ## Installation
 
-1. Download the release zip file, for example `potts_fact_ages-1.0.0-beta.7.zip`.
+1. Download the release zip file, for example `potts_fact_ages-1.0.0.zip`.
 2. Extract the zip file.
 3. Upload the `potts_fact_ages` folder to your webtrees `modules_v4` directory.
 4. In webtrees, go to **Control panel > Modules > All modules**.
 5. Enable **Potts Fact Ages**.
 6. Go to **Control panel > Modules > Tabs** and choose where the tab should appear.
-7. Open the module settings and choose how ages should be displayed. The settings page includes a direct **Tabs settings** link for confirming that the tab is enabled and for changing the tab order. The link uses the webtrees `/admin/tabs` route relative to the current installation path.
+7. Open the module settings and choose how ages should be displayed. The settings page includes a direct **Tabs settings** link for confirming that the tab is enabled and for changing the tab order.
 
 The final folder path should be:
 
 ```text
 modules_v4/potts_fact_ages/module.php
 ```
+
+## Upgrading from the early `fact_ages` beta
+
+Early development betas used the folder name `fact_ages` and the user-facing title **Fact Ages**.
+
+For the public GitHub release, the module was renamed to **Potts Fact Ages** and the folder was renamed to `potts_fact_ages`.
+
+Recommended upgrade process:
+
+1. Disable the old **Fact Ages** module in webtrees.
+2. Remove or rename the old `modules_v4/fact_ages` folder.
+3. Upload the new `modules_v4/potts_fact_ages` folder.
+4. Enable **Potts Fact Ages**.
+5. Re-check the module settings.
+6. Clear the webtrees cache.
 
 ## Settings
 
@@ -53,7 +68,7 @@ The module configuration page lets administrators choose where ages are shown:
 - Age labels on the existing fact/event title tiles
 - Both the tab and title labels
 
-The settings page also includes a direct **Tabs settings** link. Use this to make sure the **Potts Fact Ages** tab is enabled in webtrees and to set its position among the other individual-page tabs. The link is built as a relative site URL, for example `/admin/tabs` on a root installation.
+The settings page also includes a direct **Tabs settings** link. Use this to make sure the **Potts Fact Ages** tab is enabled in webtrees and to set its position among the other individual-page tabs.
 
 Administrators can also choose whether to display:
 
@@ -100,7 +115,18 @@ The status output includes the module version and diagnostic details such as can
 - Unsupported or malformed GEDCOM dates are skipped silently.
 - BCE dates and phrase-only dates are not currently supported.
 - Custom tag filtering is based on GEDCOM tags, not translated fact labels.
-- This is a public beta release. Test on a staging copy of your webtrees site before using it on a production site.
+- This is a stable public release. As with any webtrees module, test upgrades on a staging copy first where possible.
+
+## GitHub release checklist
+
+For each public release:
+
+1. Update the version number in `module.php`.
+2. Update `CHANGELOG.md`.
+3. Update `RELEASE_NOTES.md`.
+4. Create an installable zip containing the `potts_fact_ages` folder.
+5. Attach the installable zip to the GitHub release.
+6. Do not upload GitHub’s automatically generated `Source code.zip` as the installable webtrees module.
 
 ## Licence
 
@@ -109,3 +135,8 @@ GPL-3.0-or-later.
 See `LICENSE` for details.
 
 The settings page includes navigation buttons back to the module list, the webtrees Tabs settings page, the control panel and the home page.
+
+
+## Custom Module Manager
+
+This release includes `latest-version.txt` and update-service metadata so webtrees and Custom Module Manager can detect future updates.
