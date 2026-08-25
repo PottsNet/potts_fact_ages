@@ -2,6 +2,36 @@
 
 All notable changes to Potts Fact Ages will be documented in this file.
 
+## 1.0.2
+
+### Fixed
+
+- Uses the server-calculated age row for Birth, so an exact birth date now displays an age of 0 days instead of a browser-derived approximate age.
+- Removes the browser-side age-calculation fallback that could attach ages to non-event metadata such as `_FSFTID` and record-change dates.
+- Adds German translations for the approximate-age phrases and category labels reported in GitHub issue #2.
+- Normalises the internal `CLOSE_RELATIVE` label before it is displayed.
+- Uses webtrees' translated **Age** label on fact/event tiles.
+
+### Performance
+
+- Caches calculated age rows for the current individual within each PHP request.
+- Reduces the MutationObserver to child-list changes only instead of observing class, style and ARIA attribute changes across the whole page.
+- Removes click-triggered rescans and reduces eight delayed scans to one short delayed pass.
+- Keeps title labels based on server-calculated rows rather than running a second English-only browser age calculator.
+
+### Compatibility
+
+- Retains the Potts Biography exclusion introduced in 1.0.1.
+- Retains the direct webtrees Tabs settings link introduced in the beta series.
+
+## 1.0.1
+
+### Fixed
+
+- Excludes Potts Biography content from browser-side fact-tile scanning.
+- Prevents a second Potts Fact Ages label being inserted beside ages already rendered by Biography.
+- Retains normal age labels on the webtrees Facts and events tab.
+
 ## 1.0.0
 
 ### Changed

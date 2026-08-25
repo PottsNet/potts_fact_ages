@@ -29,9 +29,13 @@ This module began as part of Jason Potts’ family-history website and is now pu
 - webtrees 2.2.x
 - PHP 8.3 or later
 
+## Potts Biography compatibility
+
+Version 1.0.2 retains the 1.0.1 change that excludes `.potts-life-story` from title-tile scanning so Biography's own age wording is not duplicated. The standard Facts and events tab remains supported.
+
 ## Installation
 
-1. Download the release zip file, for example `potts_fact_ages-1.0.0.zip`.
+1. Download the release zip file, for example `potts_fact_ages-1.0.2.zip`.
 2. Extract the zip file.
 3. Upload the `potts_fact_ages` folder to your webtrees `modules_v4` directory.
 4. In webtrees, go to **Control panel > Modules > All modules**.
@@ -98,7 +102,7 @@ Potts Fact Ages controls its own **Potts Fact Ages** tab and the optional age la
 
 ## Troubleshooting
 
-The event-title labels are added using a safe front-end enhancement. This is necessary because the standard webtrees facts tab is often loaded dynamically.
+The event-title labels are added using a front-end matcher because the standard webtrees facts tab is often loaded dynamically. The age values themselves are calculated on the server and the browser only matches those calculated rows to the rendered fact/event tiles.
 
 For troubleshooting, open your browser console and run:
 
@@ -106,7 +110,7 @@ For troubleshooting, open your browser console and run:
 window.pottsFactAgesStatus
 ```
 
-The status output includes the module version and diagnostic details such as candidate counts and whether server-side individual detection worked.
+The status output includes the module version, candidate and match counts and whether server-side individual detection worked. Version 1.0.2 reports `domFallback: false` because browser-side age calculation has been removed.
 
 ## Known limitations
 

@@ -38,7 +38,7 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     use ModuleGlobalTrait;
     use ModuleConfigTrait;
 
-    private const VERSION = '1.0.0';
+    private const VERSION = '1.0.2';
     private const LATEST_VERSION_URL = 'https://raw.githubusercontent.com/PottsNet/potts_fact_ages/main/latest-version.txt';
 
     private const PREF_SHOW_PERSONAL = 'show_personal_facts';
@@ -62,6 +62,9 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     private const LOCATION_TAB = 'tab';
     private const LOCATION_TITLES = 'titles';
     private const LOCATION_BOTH = 'both';
+
+    /** @var array<string,array<int,array<string,mixed>>> */
+    private array $age_rows_cache = [];
 
     /** @var array<string> */
     private const DISPLAY_TAGS = [
@@ -154,6 +157,27 @@ return new class extends AbstractModule implements ModuleCustomInterface, Module
     public function customModuleSupportUrl(): string
     {
         return 'https://github.com/PottsNet/potts_fact_ages';
+    }
+
+    /** @return array<string,string> */
+    public function customTranslations(string $language): array
+    {
+        if ($language === 'de') {
+            return [
+                'about %s' => 'etwa %s',
+                'about %1$s to %2$s' => 'etwa %1$s bis %2$s',
+                'Close relative' => 'Nahe verwandte Person',
+                'Associate' => 'Zugeordnete Person',
+                'Historical' => 'Historisch',
+                'Other' => 'Sonstiges',
+                'Fact or event' => 'Fakt oder Ereignis',
+                'Category' => 'Kategorie',
+                'Personal' => 'Persönlich',
+                'Family' => 'Familie',
+            ];
+        }
+
+        return [];
     }
 
     public function defaultTabOrder(): int
@@ -281,6 +305,7 @@ JS;
         $config = [
             'version' => self::VERSION,
             'agePrecision' => $this->agePrecision(),
+            'ageLabel' => I18N::translate('Age'),
             'displayTags' => $this->displayTags(),
             'tagLabels' => $this->tagLabelMap(),
         ];
@@ -336,7 +361,7 @@ JS;
         return <<<'JS'
 (function(){
     const config = window.pottsFactAgesConfig || {};
-    const version = config.version || '1.0.0';
+    const version = config.version || '1.0.2';
     const serverRows = Array.isArray(window.pottsFactAges) ? window.pottsFactAges.slice() : [];
     const rows = serverRows.slice().sort((a, b) => (a.sortKey || 0) - (b.sortKey || 0));
     const serverError = window.pottsFactAgesServerError || null;
@@ -453,6 +478,7 @@ JS;
         '.wt-fact-ages-admin',
         '.potts-fact-age-inline',
         '.potts-fact-age-badge',
+        '.potts-life-story',
         'script',
         'style',
         'noscript',
@@ -924,10 +950,6 @@ JS;
     };
 
     const addAge = (target, age, id, row = null) => {
-        if (isBirthRow(row)) {
-            return false;
-        }
-
         const insertionTarget = findLeftTitleTile(target, row);
 
         if (!insertionTarget || ignored(insertionTarget) || hasExistingAge(insertionTarget) || !inMainFactsZone(insertionTarget) || !textLooksLikeRow(insertionTarget, row)) {
@@ -941,7 +963,7 @@ JS;
         label.className = 'potts-fact-age-inline';
         label.setAttribute('data-potts-fact-age-badge', '1');
         label.setAttribute('data-potts-fact-age-id', id || 'dom');
-        label.textContent = 'Age: ' + age;
+        label.textContent = String(config.ageLabel || 'Age') + ': ' + age;
 
         return placeAgeLabel(insertionTarget, anchor, label);
     };
@@ -1032,7 +1054,7 @@ JS;
                     return;
                 }
 
-                if (!rows.some((row) => !isBirthRow(row) && rowMatchesText(row, text))) {
+                if (!rows.some((row) => rowMatchesText(row, text))) {
                     return;
                 }
 
@@ -1049,7 +1071,7 @@ JS;
     const bestRowForCandidate = (candidate, used) => {
         const text = textOf(candidate);
         const matches = rows
-            .filter((row) => !used.has(row.id) && !isBirthRow(row))
+            .filter((row) => !used.has(row.id))
             .filter((row) => rowMatchesText(row, text))
             .map((row, index) => ({ row, score: scoreTargetForRow(candidate, row), index }));
 
@@ -1313,7 +1335,6 @@ JS;
 
     const applyFactAges = () => {
         const server = applyServerRows();
-        const fallback = applyDomFallback();
 
         window.pottsFactAgesStatus = {
             enabled: true,
@@ -1322,16 +1343,12 @@ JS;
             rows: rows.length,
             candidates: server.candidates.length,
             matched: server.matched,
-            domBirthFound: !!fallback.birth,
-            domBirthSource: fallback.birth ? fallback.birth.source || 'unknown' : null,
-            domCandidates: fallback.candidates.length,
-            domMatched: fallback.matched,
+            domFallback: false,
             lastRun: new Date().toISOString(),
             rootCount: pageRoots().length,
             bodyClass: document.body ? document.body.className : '',
             headingBottom: pageHeadingBottom(),
             sampleCandidates: server.candidates.slice(0, 12).map(textOf),
-            sampleDomCandidates: fallback.candidates.slice(0, 16).map((candidate) => ({ label: candidate.text, date: candidate.parsed.text })),
             sampleRows: rows.slice(0, 12).map((row) => ({label: row.label, aliases: row.aliases, age: row.age, date: row.date, tag: row.tag}))
         };
     };
@@ -1349,8 +1366,7 @@ JS;
         schedule();
     }
 
-    window.addEventListener('load', schedule);
-    document.addEventListener('click', schedule, true);
+    window.addEventListener('load', schedule, { once: true });
     document.addEventListener('shown.bs.tab', schedule, true);
 
     const startObserver = () => {
@@ -1359,12 +1375,19 @@ JS;
             return;
         }
 
-        new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'aria-expanded'] });
+        // Only react when webtrees adds/removes AJAX-rendered fact content. Attribute
+        // changes from themes and other modules no longer cause repeated whole-page scans.
+        new MutationObserver((mutations) => {
+            if (mutations.some((mutation) => mutation.addedNodes.length || mutation.removedNodes.length)) {
+                schedule();
+            }
+        }).observe(document.body, { childList: true, subtree: true });
     };
 
     startObserver();
 
-    [250, 700, 1300, 2300, 3800, 6000, 9000, 13000].forEach((delay) => window.setTimeout(applyFactAges, delay));
+    // One short delayed pass catches tabs that finish rendering just after DOMContentLoaded.
+    window.setTimeout(applyFactAges, 600);
 })();
 JS;
     }
@@ -1667,16 +1690,30 @@ JS;
      */
     private function ageRows(Individual $individual): array
     {
+        $cache_key = $individual->xref() . ':' . sha1(implode('|', [
+            $this->getPreference(self::PREF_SHOW_PERSONAL, '1'),
+            $this->getPreference(self::PREF_SHOW_FAMILY, '1'),
+            $this->getPreference(self::PREF_SHOW_RELATIVE, '1'),
+            $this->getPreference(self::PREF_SHOW_ASSOCIATE, '1'),
+            $this->getPreference(self::PREF_SHOW_HISTORIC, '1'),
+            $this->getPreference(self::PREF_FACT_TAGS, ''),
+            $this->getPreference(self::PREF_AGE_PRECISION, self::AGE_SIMPLE),
+        ]));
+
+        if (isset($this->age_rows_cache[$cache_key])) {
+            return $this->age_rows_cache[$cache_key];
+        }
+
         $birth_date_text = $this->extractBirthDate($individual->gedcom());
 
         if ($birth_date_text === null) {
-            return [];
+            return $this->age_rows_cache[$cache_key] = [];
         }
 
         $birth_date = $this->parseGedcomDate($birth_date_text);
 
         if ($birth_date === null) {
-            return [];
+            return $this->age_rows_cache[$cache_key] = [];
         }
 
         $rows = [];
@@ -1720,7 +1757,7 @@ JS;
             }
 
             $rows[] = [
-                'label' => $fact->label(),
+                'label' => $this->displayFactLabel($fact),
                 'value' => $this->factValueHtml($fact),
                 'category' => $this->escape($this->categoryLabel($category)),
                 'date'  => $this->escape(strip_tags($fact->date()->display())),
@@ -1735,7 +1772,7 @@ JS;
 
         usort($rows, static fn (array $a, array $b): int => $a['sort_key'] <=> $b['sort_key']);
 
-        return $rows;
+        return $this->age_rows_cache[$cache_key] = $rows;
     }
 
     /**
@@ -1818,6 +1855,17 @@ JS;
             'associate' => I18N::translate('Associate'),
             'historic' => I18N::translate('Historical'),
             default => I18N::translate('Other'),
+        };
+    }
+
+    private function displayFactLabel(Fact $fact): string
+    {
+        $label = trim(strip_tags($fact->label()));
+        $normalised = strtoupper(str_replace([' ', '-'], '_', $label));
+
+        return match ($normalised) {
+            'CLOSE_RELATIVE' => I18N::translate('Close relative'),
+            default => $label,
         };
     }
 
